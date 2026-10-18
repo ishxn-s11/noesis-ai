@@ -1,0 +1,36 @@
+# Web framework & API
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sse-starlette==2.2.1
+python-multipart==0.0.20
+
+# Persistence
+SQLAlchemy==2.0.36
+alembic==1.14.0
+psycopg[binary]==3.2.3
+pgvector==0.3.6
+redis==8.1.0
+
+# Context layer: openCypher graph client (FalkorDB speaks the Redis protocol)
+FalkorDB==1.8.0
+
+# Auth / config
+PyJWT==2.10.1
+pydantic==2.10.4
+pydantic-settings==2.7.0
+email-validator==2.2.0
+
+# Scientific computing stack
+numpy==2.2.1
+scipy==1.15.0
+sympy==1.13.1
+astropy==7.0.0
+astroquery==0.4.7
+pandas==2.2.3
+matplotlib==3.10.0
+rebound==5.2.2
+emcee==3.1.6
+
+# Testing / tooling
+pytest==8.3.4
+httpx==0.28.1
