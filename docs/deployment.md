@@ -1,5 +1,48 @@
 # NOESIS AI — Deployment
 
+## Vercel frontend + Render backend
+
+The repository includes `render.yaml` for a single Docker API instance with
+one in-process research worker. Its 1 GB persistent disk stores both SQLite
+and research artifacts under `/srv/data`. This is a small-instance deployment;
+do not scale it to multiple instances while it uses SQLite/local artifacts.
+Redis and FalkorDB are optional and are not provisioned by this Blueprint.
+Without LLM credentials, research uses the existing deterministic offline mode.
+
+Render's `1c-2g` compute and persistent disk are paid resources. Review the
+current price in Render before provisioning; adding this file alone does not
+create resources or start billing. See https://render.com/pricing and
+https://render.com/docs/disks. Disk-backed deployments briefly interrupt the
+service during a restart/deploy. Keep independent database backups.
+
+1. Connect the repository to Render and create a Blueprint from `render.yaml`
+   on the merged `main` branch. It builds `backend/Dockerfile` from the repo
+   root, applies migrations at startup, and generates `NOESIS_JWT_SECRET`.
+2. Wait for the API's `/health` endpoint to report `status: ok` and
+   `database: ok`. Record the actual HTTPS URL assigned by Render.
+3. In the existing Vercel `noesis-ai` project, set Root Directory to `frontend`,
+   framework to Vite, install command to `npm ci`, build command to
+   `npm run build`, and output directory to `dist`.
+4. Set `VITE_API_BASE_URL` in Vercel to the Render origin (for example,
+   `https://your-assigned-service.onrender.com`), without a trailing `/api`.
+   This value is public build configuration, not a secret. Redeploy the frontend
+   after changing it; Vite embeds it at build time.
+5. Connect GitHub in Vercel account authentication settings, then connect
+   `ishxn-s11/noesis-ai` in the project's Git settings. Use `main` for
+   production. Render redeploys backend changes from `main` as well.
+6. Verify registration/login, create a research session, submit a simulation,
+   observe job events, and download its artifact from the live frontend.
+
+`NOESIS_CORS_ORIGINS` in the Blueprint allows the current production Vercel
+domains and localhost. Add any new frontend custom domain explicitly before
+using it. Preview URLs are not wildcard-allowed. All browser API, upload,
+download, and streaming requests use `VITE_API_BASE_URL`; an empty value keeps
+the local same-origin Vite proxy behavior.
+
+Account sign-in and GitHub authorization must be completed by the account
+owner. Never put GitHub tokens, backend secrets, or private environment files
+in the repository or `VITE_*` variables.
+
 ## Development (zero external dependencies)
 
 ```bash

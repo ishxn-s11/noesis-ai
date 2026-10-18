@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api, getToken } from "../api";
+import { api, apiUrl, getToken } from "../api";
 
 interface ArchiveResult {
   source?: string;
@@ -83,7 +83,7 @@ export default function ObservationExplorer() {
     const form = new FormData();
     form.append("file", file);
     try {
-      const resp = await fetch("/api/labs/fits", {
+      const resp = await fetch(apiUrl("/api/labs/fits"), {
         method: "POST",
         headers: { Authorization: `Bearer ${getToken() ?? ""}` },
         body: form,

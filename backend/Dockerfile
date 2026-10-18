@@ -24,4 +24,4 @@ ENV NOESIS_ARTIFACT_ROOT=/srv/artifacts \
     NOESIS_DATABASE_URL=sqlite:////srv/data/noesis.db
 
 EXPOSE 8000
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "mkdir -p \"$NOESIS_ARTIFACT_ROOT\" && alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

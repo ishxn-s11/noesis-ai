@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { api, downloadArtifact, getToken } from "../api";
+import { api, apiUrl, downloadArtifact, getToken } from "../api";
 
 interface SessionRow {
   id: string;
@@ -49,7 +49,7 @@ export default function ReportCenter() {
   useEffect(() => {
     if (!reports.length) return;
     let cancelled = false;
-    void fetch(`/api/artifacts/${reports[0].id}/download`, {
+    void fetch(apiUrl(`/api/artifacts/${reports[0].id}/download`), {
       headers: { Authorization: `Bearer ${getToken() ?? ""}` },
     })
       .then((r) => (r.ok ? r.text() : ""))
