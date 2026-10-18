@@ -343,7 +343,7 @@ def execute_job(job_id: str, user: CurrentUser = Depends(get_current_user),
     db.commit()
     if claimed.rowcount == 1:
         backend_root = str(Path(__file__).resolve().parents[2])
-        child_env = {**os.environ, "PYTHONPATH": backend_root}
+        child_env = {**os.environ, "PYTHONPATH": os.pathsep.join([backend_root, *sys.path])}
         try:
             subprocess.run([sys.executable, "-m", "workers.serverless_job", job_id],
                            env=child_env, cwd="/tmp" if os.environ.get("VERCEL") else None,
