@@ -25,7 +25,8 @@ def stellar_analysis(ctx: NodeContext) -> AgentResult:
     t0 = time.time()
     import numpy as np
 
-    masses = np.geomspace(0.1, 50.0, 36)
+    # The analytic model has an open lower bound: 0.1 < M/Msun.
+    masses = np.geomspace(0.11, 50.0, 36)
     points = [stellar_parameters(float(m)) for m in masses]
 
     # residuals: simplified model vs published reference values
@@ -73,7 +74,7 @@ def stellar_analysis(ctx: NodeContext) -> AgentResult:
         summary=f"HR diagram + {len(residuals)} reference comparisons",
         output={"hr_artifact_id": art.id, "residuals": residuals},
         evidence=[evidence("physics.stellar.hr",
-                           args={"mass_range_msun": [0.1, 50.0], "n_points": len(points)},
+                           args={"mass_range_msun": [0.11, 50.0], "n_points": len(points)},
                            result_summary=f"HR plot saved; residuals vs literature: "
                                           + json.dumps([{k: r[k] for k in ("name", "teff_rel_err", "lum_rel_err")
                                                          if k in r} for r in residuals])[:300],
