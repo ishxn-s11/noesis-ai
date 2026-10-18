@@ -99,8 +99,9 @@ def execute_isolated(request: SimulationRequest, timeout_s: int | None = None) -
         req_path = Path(tmp) / "request.json"
         out_path = Path(tmp) / "result.json"
         req_path.write_text(request.model_dump_json(), encoding="utf-8")
-        env = {"PYTHONPATH": str(backend_root), "PYTHONIOENCODING": "utf-8"}
         import os
+        env = {"PYTHONPATH": os.pathsep.join([str(backend_root), *sys.path]),
+               "PYTHONIOENCODING": "utf-8"}
 
         proc_env = {**os.environ, **env}
         try:

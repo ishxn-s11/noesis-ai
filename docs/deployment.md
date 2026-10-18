@@ -1,5 +1,38 @@
 # NOESIS AI — Deployment
 
+## Free Vercel + Neon deployment
+
+The root `vercel.json` serves the Vite frontend and the Python API together.
+Set the Vercel project root to the repository root, framework to Other, build
+command to `npm --prefix frontend ci && npm --prefix frontend run build`, and
+output directory to `frontend/dist`. Connect a **Free** Neon Postgres database
+through Vercel Storage. Keep `DATABASE_URL` server-only, set a random sensitive
+`NOESIS_JWT_SECRET`, and set `VITE_SERVERLESS=true`. Leave `VITE_API_BASE_URL`
+empty for this same-origin deployment. No Render resource is needed.
+
+This mode stores artifact bytes in Postgres instead of the ephemeral function
+filesystem. The first backend start initializes the new database schema under
+a Postgres advisory lock. Existing production databases should still use
+reviewed schema migrations. Auth, research state, and artifact content survive
+function restarts. The database's free storage/compute quotas still apply.
+
+The browser starts a separate authenticated `/api/jobs/{id}/execute` request
+when it receives or polls a queued job. A database conditional claim prevents
+duplicate execution. Each request owns one worker subprocess with a 240-second
+deadline; oversized jobs fail explicitly. Interrupted jobs can be retried when
+the user returns and polls them after five minutes. Keep the app open while
+starting research. There is no continuously running background worker or
+guaranteed unattended execution in this mode. Agent state and checkpoints
+persist; process-local event broadcasts are not shared between functions, so
+the UI also polls saved job/session state.
+
+Keep uploads and generated artifacts below 4 MB to fit Vercel's response limit.
+Use small simulations and parameter sweeps. The free tier is intended for
+personal/noncommercial use within Vercel and Neon allowances; no paid plan,
+automatic upgrade, or external LLM provider is enabled by this configuration.
+The root Python requirements omit unused pandas/astroquery and development
+test dependencies to reduce the function bundle.
+
 ## Vercel frontend + Render backend
 
 The repository includes `render.yaml` for a single Docker API instance with

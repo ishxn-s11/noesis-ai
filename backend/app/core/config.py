@@ -9,6 +9,8 @@ class Settings(BaseSettings):
 
     app_name: str = "NOESIS AI"
     environment: str = "development"
+    serverless: bool = False
+    artifact_storage: str = "disk"
     api_prefix: str = "/api"
 
     # Persistence. SQLite by default for zero-dependency local runs;
