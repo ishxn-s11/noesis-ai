@@ -1,0 +1,202 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+   Theme variables. LIGHT (editorial ink-on-paper) is the default on
+   :root; html.dark redefines the same channel triples and every Tailwind
+   utility repaints itself (colors are emitted as
+   rgb(var(--x) / <alpha-value>)). src/theme.ts persists the choice.
+   --------------------------------------------------------------------------- */
+:root {
+  /* slate: light editorial ramp — low index = ink, high index = paper */
+  --sl-50: 17 17 17;
+  --sl-100: 26 26 25;
+  --sl-200: 43 43 41;
+  --sl-300: 61 61 58;
+  --sl-400: 107 107 102;
+  --sl-500: 138 138 132;
+  --sl-600: 165 165 158;
+  --sl-700: 212 212 205;
+  --sl-800: 230 230 223;
+  --sl-900: 244 244 239;
+  --sl-950: 255 255 255;
+  /* accent (cyan): black-on-paper primary, graphite secondaries */
+  --cy-200: 69 69 66;
+  --cy-300: 86 86 82;
+  --cy-400: 31 31 30;
+  --cy-500: 0 0 0;
+  --cy-600: 0 0 0;
+  --cy-700: 58 58 55;
+  --cy-800: 87 87 82;
+  /* status colors: dark inks legible on paper */
+  --em-300: 26 107 69;
+  --em-500: 18 92 57;
+  --am-200: 227 220 194;
+  --am-300: 122 99 16;
+  --am-400: 92 74 13;
+  --am-500: 138 109 0;
+  --am-700: 74 59 10;
+  --ro-300: 164 19 46;
+  --ro-400: 140 16 38;
+  --ro-500: 176 0 32;
+  --vi-300: 75 63 160;
+  --vi-500: 63 52 144;
+  --or-300: 163 74 0;
+  /* cosmos surfaces */
+  --co-900: 250 250 247;
+  --co-800: 242 242 236;
+  --co-700: 230 230 223;
+  --co-accent: 0 0 0;
+  --co-warm: 163 74 0;
+}
+
+/* Also used by .dark-scope: overlay surfaces (gallery lightbox) that stay
+   deep-space dark in BOTH themes redefine the same variables locally, so
+   every Tailwind utility inside repaints with dark values. */
+html.dark,
+.dark-scope {
+  /* slate: classic dark ramp — low index = paper, high index = deep space */
+  --sl-50: 255 255 255;
+  --sl-100: 241 245 249;
+  --sl-200: 226 232 240;
+  --sl-300: 203 213 225;
+  --sl-400: 148 163 184;
+  --sl-500: 100 116 139;
+  --sl-600: 71 85 105;
+  --sl-700: 51 65 85;
+  --sl-800: 30 41 59;
+  --sl-900: 15 23 42;
+  --sl-950: 11 16 32;
+  /* accent: cyan glows on dark */
+  --cy-200: 186 230 253;
+  --cy-300: 125 211 252;
+  --cy-400: 56 189 248;
+  --cy-500: 14 165 233;
+  --cy-600: 2 132 199;
+  --cy-700: 3 105 161;
+  --cy-800: 7 89 133;
+  /* status colors: bright on dark */
+  --em-300: 74 222 128;
+  --em-500: 34 197 94;
+  --am-200: 254 243 199;
+  --am-300: 253 211 77;
+  --am-400: 251 191 36;
+  --am-500: 245 158 11;
+  --am-700: 180 83 9;
+  --ro-300: 253 164 175;
+  --ro-400: 251 113 133;
+  --ro-500: 244 63 94;
+  --vi-300: 196 181 253;
+  --vi-500: 139 92 246;
+  --or-300: 251 146 60;
+  /* cosmos surfaces: deep space */
+  --co-900: 11 16 32;
+  --co-800: 17 26 51;
+  --co-700: 26 39 71;
+  --co-accent: 79 195 247;
+  --co-warm: 255 138 101;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* Atlason-inspired editorial base: ink on paper, hairline rules,
+   sharp corners, type-led hierarchy. */
+body {
+  font-family: "Helvetica Neue", Helvetica, Inter, Arial, system-ui, sans-serif;
+  color: rgb(var(--sl-100));
+  background: rgb(var(--sl-950));
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgb(var(--sl-50));
+  color: rgb(var(--sl-950));
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+.card {
+  @apply rounded-none border p-5;
+  border-color: rgb(var(--sl-700));
+  background: rgb(var(--sl-950));
+}
+
+html.dark .card {
+  background: rgb(var(--sl-900));
+}
+
+.badge {
+  @apply rounded-none border px-2 py-0.5 text-[10px] font-medium uppercase
+    tracking-[0.12em];
+  border-color: rgb(var(--sl-700));
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-none px-4 py-2
+    text-[12px] font-medium uppercase tracking-[0.14em] transition
+    disabled:cursor-not-allowed disabled:opacity-40;
+}
+
+.btn-primary {
+  @apply btn;
+  background: rgb(var(--sl-50));
+  color: rgb(var(--sl-950));
+}
+
+.btn-primary:hover {
+  background: rgb(var(--sl-400));
+  color: rgb(var(--sl-950));
+}
+
+.btn-ghost {
+  @apply btn border;
+  border-color: rgb(var(--sl-700));
+  color: rgb(var(--sl-100));
+}
+
+.btn-ghost:hover {
+  border-color: rgb(var(--sl-100));
+}
+
+.input {
+  @apply w-full rounded-none border px-3 py-2 text-sm
+    placeholder-slate-500 focus:outline-none;
+  border-color: rgb(var(--sl-700));
+  background: rgb(var(--sl-950));
+  color: rgb(var(--sl-100));
+}
+
+.input:focus {
+  border-color: rgb(var(--sl-100));
+}
+
+html.dark .input {
+  background: rgb(var(--sl-950));
+}
+
+/* Type-led display scale (Atlason hero headings: ~60px, weight 500) */
+.display {
+  @apply font-disp text-[clamp(34px,5.5vw,60px)] font-medium leading-[1.04] tracking-[-0.02em];
+}
+
+.display-sm {
+  @apply font-disp text-[clamp(24px,3vw,36px)] font-medium leading-[1.1] tracking-[-0.01em];
+}
+
+.eyebrow {
+  @apply text-[11px] font-medium uppercase tracking-[0.18em];
+  color: rgb(var(--sl-400));
+}
+
+.mono {
+  font-family: "SF Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
