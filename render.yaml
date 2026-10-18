@@ -1,0 +1,39 @@
+# Paid compute and disk: review Render's price before creating the Blueprint.
+services:
+  - type: web
+    name: noesis-api
+    runtime: docker
+    repo: https://github.com/ishxn-s11/noesis-ai
+    branch: main
+    plan: 1c-2g
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    numInstances: 1
+    disk:
+      name: noesis-data
+      mountPath: /srv/data
+      sizeGB: 1
+    envVars:
+      - key: NOESIS_ENVIRONMENT
+        value: production
+      - key: NOESIS_DATABASE_URL
+        value: sqlite:////srv/data/noesis.db
+      - key: NOESIS_ARTIFACT_ROOT
+        value: /srv/data/artifacts
+      - key: NOESIS_JWT_SECRET
+        generateValue: true
+      - key: NOESIS_WORKERS_ENABLED
+        value: "true"
+      - key: NOESIS_WORKER_COUNT
+        value: "1"
+      - key: NOESIS_CORS_ORIGINS
+        value: https://noesis-ai-drab.vercel.app,https://noesis-ai-ishan29s2908-5136.vercel.app,http://localhost:5173
+      - key: MPLCONFIGDIR
+        value: /tmp/matplotlib
+      - key: OMP_NUM_THREADS
+        value: "1"
+      - key: OPENBLAS_NUM_THREADS
+        value: "1"

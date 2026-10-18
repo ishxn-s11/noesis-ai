@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { api, artifactUrl, getToken, subscribeJobEvents } from "../api";
+import { api, apiUrl, artifactUrl, getToken, subscribeJobEvents } from "../api";
 import Plot from "../components/Plot";
 import { ExplainText } from "../components/Explain";
 
@@ -446,7 +446,7 @@ function ArtifactImage({ id, alt }: { id: string; alt: string }) {
   const [url, setUrl] = useState("");
   useEffect(() => {
     let revoked: string | null = null;
-    void fetch(`/api/artifacts/${id}/download`, {
+    void fetch(apiUrl(`/api/artifacts/${id}/download`), {
       headers: { Authorization: `Bearer ${getToken() ?? ""}` },
     })
       .then((r) => (r.ok ? r.blob() : null))

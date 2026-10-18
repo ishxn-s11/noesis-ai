@@ -2,6 +2,12 @@
 
 const TOKEN_KEY = "noesis_token";
 const USER_KEY = "noesis_user";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
+
+/** Backend origin for split frontend/API hosting; empty keeps the local proxy. */
+export function apiUrl(path: string): string {
+  return `${API_BASE_URL}${path}`;
+}
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -42,7 +48,7 @@ export async function api<T = unknown>(
   };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
-  const resp = await fetch(path, { ...options, headers });
+  const resp = await fetch(apiUrl(path), { ...options, headers });
   if (resp.status === 401) {
     clearSession();
     window.location.hash = "#/login";
@@ -66,7 +72,7 @@ export async function api<T = unknown>(
 }
 
 export function downloadArtifact(artifactId: string, filename: string): void {
-  fetch(`/api/artifacts/${artifactId}/download`, {
+  fetch(apiUrl(`/api/artifacts/${artifactId}/download`), {
     headers: { Authorization: `Bearer ${getToken()}` },
   })
     .then((r) => r.blob())
@@ -81,7 +87,7 @@ export function downloadArtifact(artifactId: string, filename: string): void {
 }
 
 export function artifactUrl(artifactId: string): string {
-  return `/api/artifacts/${artifactId}/download`;
+  return apiUrl(`/api/artifacts/${artifactId}/download`);
 }
 
 /** Subscribe to job SSE events; returns a cleanup function. */
@@ -89,17 +95,11 @@ export function subscribeJobEvents(
   jobId: string,
   onEvent: (evt: Record<string, unknown>) => void,
 ): () => void {
-  const es = new EventSource(
-    `/api/jobs/${jobId}/events?access_token=${getToken() ?? ""}`,
-  );
-  // EventSource cannot set headers: the backend also accepts query token via
-  // bearer only, so we pass token as Authorization using fetch-stream instead.
-  es.close();
-
+  // Fetch streaming supports the bearer header, including across origins.
   const ctrl = new AbortController();
   void (async () => {
     try {
-      const resp = await fetch(`/api/jobs/${jobId}/events`, {
+      const resp = await fetch(apiUrl(`/api/jobs/${jobId}/events`), {
         headers: {
           Authorization: `Bearer ${getToken() ?? ""}`,
           Accept: "text/event-stream",
