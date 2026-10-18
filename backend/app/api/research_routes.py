@@ -286,6 +286,14 @@ def download_artifact(artifact_id: str, user: CurrentUser = Depends(get_current_
     ).first()
     if not art:
         raise NotFoundErr("Artifact not found")
+    if art.path.startswith("database:"):
+        from fastapi.responses import Response
+        from app.database.models import ArtifactContent
+        payload = db.get(ArtifactContent, art.id)
+        if payload is None:
+            raise NotFoundErr("Artifact content missing")
+        return Response(payload.content, media_type=art.content_type,
+                        headers={"Content-Disposition": f'attachment; filename="{art.filename}"'})
     from pathlib import Path
 
     if not Path(art.path).exists():
@@ -301,6 +309,53 @@ def job_status(job_id: str, user: CurrentUser = Depends(get_current_user),
     if not job:
         raise NotFoundErr("Job not found")
     return _job(job)
+
+
+@router.post("/jobs/{job_id}/execute", summary="Execute one job within the free function deadline")
+def execute_job(job_id: str, user: CurrentUser = Depends(get_current_user),
+                db: Session = Depends(get_db)) -> dict:
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+    from app.core.config import settings
+    from sqlalchemy import update
+
+    if not settings.serverless:
+        raise ValidationErr("Request execution is only enabled on the serverless deployment")
+    job = db.query(Job).filter(Job.id == job_id, Job.tenant_id == user.tenant_id).first()
+    if job is None:
+        raise NotFoundErr("Job not found")
+    from datetime import timedelta
+    cutoff = queue._now() - timedelta(seconds=300)
+    db.execute(update(Job).where(Job.id == job_id, Job.tenant_id == user.tenant_id,
+                                 Job.status == "running", Job.heartbeat_at < cutoff)
+               .values(status="queued", locked_by="", error="Retrying interrupted request"))
+    db.commit()
+    db.refresh(job)
+    if job.status != "queued":
+        return _job(job)
+    # A conditional update prevents two requests from executing the same job.
+    claimed = db.execute(update(Job).where(Job.id == job.id, Job.status == "queued")
+                         .values(status="running", locked_by="vercel-request",
+                                 attempts=Job.attempts + 1, started_at=queue._now(),
+                                 heartbeat_at=queue._now()))
+    db.commit()
+    if claimed.rowcount == 1:
+        backend_root = str(Path(__file__).resolve().parents[2])
+        child_env = {**os.environ, "PYTHONPATH": backend_root}
+        try:
+            subprocess.run([sys.executable, "-m", "workers.serverless_job", job_id],
+                           env=child_env, cwd="/tmp" if os.environ.get("VERCEL") else None,
+                           timeout=240, check=True, stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL, start_new_session=os.name != "nt")
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
+            db.execute(update(Job).where(Job.id == job_id, Job.status == "running")
+                       .values(status="failed", error="Job exceeded its execution budget or stopped unexpectedly; use a smaller workload.",
+                               finished_at=queue._now()))
+            db.commit()
+    db.expire_all()
+    return _job(db.get(Job, job_id))
 
 
 @router.get("/jobs/{job_id}/events", summary="Live agent activity (SSE)")
@@ -337,13 +392,15 @@ async def job_events(job_id: str, user: CurrentUser = Depends(get_current_user),
                         break
                     continue
                 idle += 1.0
+                db.expire_all()
                 fresh = db.query(Job).filter(Job.id == job_id).first()
                 yield _sse({"type": "ping", "job_status": fresh.status})
                 if fresh.status in {"succeeded", "failed", "cancelled"} and idle > 2:
                     yield _sse({"type": "status", "status": fresh.status,
                                 "checkpoint": fresh.checkpoint})
                     break
-                if idle > 3600:
+                from app.core.config import settings
+                if idle > (240 if settings.serverless else 3600):
                     break
         finally:
             events.unsubscribe(job_id, q)

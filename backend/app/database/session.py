@@ -8,6 +8,7 @@ from collections.abc import Generator
 
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 
@@ -15,6 +16,8 @@ _IS_POSTGRES = settings.database_url.startswith(("postgres", "postgresql"))
 
 connect_args = {"check_same_thread": False} if not _IS_POSTGRES else {}
 engine_kwargs = {"future": True}
+if settings.serverless and _IS_POSTGRES:
+    engine_kwargs["poolclass"] = NullPool
 if not _IS_POSTGRES:
     engine_kwargs["connect_args"] = connect_args
     if not _IS_POSTGRES:
@@ -59,4 +62,9 @@ def init_db() -> None:
     from app.database import models  # noqa: F401
     from app.database.base import Base
 
-    Base.metadata.create_all(bind=engine)
+    if settings.serverless and _IS_POSTGRES:
+        with engine.begin() as connection:
+            connection.execute(text("SELECT pg_advisory_xact_lock(846322017)"))
+            Base.metadata.create_all(bind=connection)
+    else:
+        Base.metadata.create_all(bind=engine)

@@ -11,7 +11,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.database.models import Artifact
+from app.database.models import Artifact, ArtifactContent
 
 
 def _root() -> Path:
@@ -33,12 +33,21 @@ def save_artifact(
     meta: dict | None = None,
 ) -> Artifact:
     rel_dir = Path(tenant_id) / (project_id or "global")
-    abs_dir = _root() / rel_dir
-    abs_dir.mkdir(parents=True, exist_ok=True)
     safe_name = "".join(c if c.isalnum() or c in "._-" else "_" for c in filename)
-    path = abs_dir / f"{uuid.uuid4().hex[:8]}_{safe_name}"
-    path.write_bytes(content)
+    artifact_id = str(uuid.uuid4())
+    if settings.artifact_storage == "database":
+        # Keep responses below Vercel's 4.5 MB payload limit.
+        if len(content) > 4_000_000:
+            raise ValueError("Artifact exceeds the free deployment's 4 MB limit")
+        path = f"database:{artifact_id}"
+        db.add(ArtifactContent(artifact_id=artifact_id, content=content))
+    else:
+        abs_dir = _root() / rel_dir
+        abs_dir.mkdir(parents=True, exist_ok=True)
+        path = abs_dir / f"{uuid.uuid4().hex[:8]}_{safe_name}"
+        path.write_bytes(content)
     art = Artifact(
+        id=artifact_id,
         tenant_id=tenant_id,
         project_id=project_id,
         session_id=session_id,

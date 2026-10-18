@@ -9,6 +9,19 @@ export function apiUrl(path: string): string {
   return `${API_BASE_URL}${path}`;
 }
 
+const activeJobs = new Set<string>();
+function startServerlessJob(path: string, body: unknown): void {
+  if (import.meta.env.VITE_SERVERLESS !== "true" || path.endsWith("/execute") || !body || typeof body !== "object") return;
+  const result = body as { job_id?: string; status?: string; id?: string; job?: { id?: string; status?: string } };
+  const jobId = result.job_id ?? result.job?.id ??
+    ((result.status === "queued" || result.status === "running") ? path.match(/^\/api\/(?:jobs|simulations)\/([^/]+)/)?.[1] : undefined);
+  if (!jobId || activeJobs.has(jobId)) return;
+  activeJobs.add(jobId);
+  void api(`/api/jobs/${encodeURIComponent(jobId)}/execute`, { method: "POST" })
+    .catch((error) => console.warn("Research job request ended", error))
+    .finally(() => activeJobs.delete(jobId));
+}
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -68,6 +81,7 @@ export async function api<T = unknown>(
       err?.detail ?? body,
     );
   }
+  startServerlessJob(path, body);
   return body as T;
 }
 

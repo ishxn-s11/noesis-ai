@@ -9,6 +9,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -226,6 +227,13 @@ class DatasetRecord(Base, TimestampMixin):
     meta: Mapped[dict] = mapped_column(JSON, default=dict)
     artifact_id: Mapped[str] = mapped_column(String(36), default="")
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class ArtifactContent(Base):
+    """Persistent artifact bytes when no writable persistent disk is available."""
+    __tablename__ = "artifact_contents"
+    artifact_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    content: Mapped[bytes] = mapped_column(LargeBinary)
 
 
 class Artifact(Base, TimestampMixin):
